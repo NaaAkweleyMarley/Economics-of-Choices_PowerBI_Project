@@ -1,0 +1,84 @@
+table 'Pivot Table'
+	lineageTag: e609e432-d9fa-482b-aa90-dfba4a9001d8
+
+	column Product
+		dataType: string
+		lineageTag: 0455531f-5d86-4738-a1d6-d1b1bb7614b5
+		summarizeBy: none
+		sourceColumn: Product
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Grand Total'
+		dataType: decimal
+		formatString: \$#,0.###############;(\$#,0.###############);\$#,0.###############
+		lineageTag: abf9a682-fb2a-4a58-bed9-f9ab65c95e5b
+		summarizeBy: none
+		sourceColumn: Grand Total
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: string
+		lineageTag: 71590bfd-23d2-46a4-ae54-ba0c0ea164ea
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value
+		dataType: decimal
+		formatString: "GH₵"#,0.###############;-"GH₵"#,0.###############;"GH₵"#,0.###############
+		lineageTag: f00367e8-d94b-40a1-9fec-c75d761bc6d1
+		summarizeBy: sum
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GH"}
+
+	column Location
+		dataType: string
+		lineageTag: c43d0e38-3d3b-49b2-9343-c9c2203bd089
+		summarizeBy: none
+		sourceColumn: Location
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Pivot Table' = m
+		mode: import
+		source = ```
+				let
+				    Source = Excel.Workbook(File.Contents("C:\Users\akwel\Downloads\Apocolypse Food Prep - Power Query Editor Tutorial.xlsx"), null, true),
+				    #"Pivot Table_Sheet" = Source{[Item="Pivot Table",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Pivot Table_Sheet", [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Sum of Price", type text}, {"Column Labels", type text}, {"Column3", type any}, {"Column4", type any}, {"Column5", type any}, {"Column6", type any}, {"Column7", type any}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Column Labels"}),
+				    #"Replaced Value" = Table.ReplaceValue(#"Removed Columns",null,0,Replacer.ReplaceValue,{"Column4"}),
+				    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value",null,0,Replacer.ReplaceValue,{"Column5"}),
+				    #"Promoted Headers1" = Table.PromoteHeaders(#"Replaced Value1", [PromoteAllScalars=true]),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers1",{{"Row Labels", type text}, {"Jan", type number}, {"Feb", type number}, {"Mar", type number}, {"Apr", type number}, {"Grand Total", type number}}),
+				    #"Replaced Value2" = Table.ReplaceValue(#"Changed Type1",null,0,Replacer.ReplaceValue,{"Apr"}),
+				    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2",null,0,Replacer.ReplaceValue,{"Grand Total"}),
+				    #"Removed Blank Rows" = Table.SelectRows(#"Replaced Value3", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+				    #"Filtered Rows" = Table.SelectRows(#"Removed Blank Rows", each ([Row Labels] <> "(blank)")),
+				    #"Changed Type2" = Table.TransformColumnTypes(#"Filtered Rows",{{"Jan", Currency.Type}, {"Feb", Currency.Type}, {"Mar", Currency.Type}, {"Apr", Currency.Type}, {"Grand Total", Currency.Type}}),
+				    #"Unpivoted Columns" = Table.UnpivotOtherColumns(#"Changed Type2", {"Row Labels", "Grand Total"}, "Attribute", "Value"),
+				    #"Renamed Columns" = Table.RenameColumns(#"Unpivoted Columns",{{"Attribute", "Month"}}),
+				    #"Changed Type3" = Table.TransformColumnTypes(#"Renamed Columns",{{"Month", type text}}),
+				    #"Added Custom" = Table.AddColumn(#"Changed Type3", "Location", each if [Row Labels] = "Costco" or [Row Labels] = "Target" or [Row Labels] = "Walmart"
+				then [Row Labels] 
+				else null),
+				    #"Reordered Columns" = Table.ReorderColumns(#"Added Custom",{"Row Labels", "Location", "Grand Total", "Month", "Value"}),
+				    #"Filled Down" = Table.FillDown(#"Reordered Columns",{"Location"}),
+				    #"Filtered Rows1" = Table.SelectRows(#"Filled Down", each ([Row Labels] <> "Costco" and [Row Labels] <> "Target" and [Row Labels] <> "Walmart")),
+				    #"Renamed Columns1" = Table.RenameColumns(#"Filtered Rows1",{{"Row Labels", "Product"}}),
+				    #"Reordered Columns1" = Table.ReorderColumns(#"Renamed Columns1",{"Location", "Product", "Grand Total", "Month", "Value"})
+				in
+				    #"Reordered Columns1"
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

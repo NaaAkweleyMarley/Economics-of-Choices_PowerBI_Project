@@ -1,0 +1,92 @@
+table 'Data and Metadata Countries (merged)'
+	lineageTag: 104aca9c-46c5-4608-87e6-3ad1beda686d
+
+	column 'Country Name'
+		dataType: string
+		lineageTag: 6d932bfc-9b1b-4cda-9628-0aa0b459b880
+		summarizeBy: none
+		sourceColumn: Country Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Country Code'
+		dataType: string
+		lineageTag: 57fc80a8-0aea-4f23-a06a-20711a04b60d
+		summarizeBy: none
+		sourceColumn: Country Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Indicator Name'
+		dataType: string
+		lineageTag: cbc57633-d146-4019-845a-3d274a1452e9
+		summarizeBy: none
+		sourceColumn: Indicator Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Indicator Code'
+		dataType: string
+		lineageTag: 304a2304-67c0-47c2-82f1-0117db029362
+		summarizeBy: none
+		sourceColumn: Indicator Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 0a08cc11-4bda-448c-9520-b589d0ad77dd
+		summarizeBy: sum
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column Population
+		dataType: int64
+		formatString: 0
+		lineageTag: 7392886b-4e36-484f-bb42-f101232e8012
+		summarizeBy: sum
+		sourceColumn: Population
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: ecae7237-4ce9-4246-a61f-8eb20d59d70b
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column IncomeGroup
+		dataType: string
+		lineageTag: 8ed47875-5b49-486f-9ee0-5ebe8bf3e699
+		summarizeBy: none
+		sourceColumn: IncomeGroup
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Data and Metadata Countries (merged)' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(Web.Contents("https://api.worldbank.org/v2/en/indicator/SP.POP.TOTL?downloadformat=excel"), null, true),
+				    Data1 = Source{[Name="Data"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Data1, [PromoteAllScalars=true]),
+				    #"Removed Top Rows" = Table.Skip(#"Promoted Headers",2),
+				    #"Promoted Headers1" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers1",{{"Country Name", type text}, {"Country Code", type text}, {"Indicator Name", type text}, {"Indicator Code", type text}, {"1960", Int64.Type}, {"1961", Int64.Type}, {"1962", Int64.Type}, {"1963", Int64.Type}, {"1964", Int64.Type}, {"1965", Int64.Type}, {"1966", Int64.Type}, {"1967", Int64.Type}, {"1968", Int64.Type}, {"1969", Int64.Type}, {"1970", Int64.Type}, {"1971", Int64.Type}, {"1972", Int64.Type}, {"1973", Int64.Type}, {"1974", Int64.Type}, {"1975", Int64.Type}, {"1976", Int64.Type}, {"1977", Int64.Type}, {"1978", Int64.Type}, {"1979", Int64.Type}, {"1980", Int64.Type}, {"1981", Int64.Type}, {"1982", Int64.Type}, {"1983", Int64.Type}, {"1984", Int64.Type}, {"1985", Int64.Type}, {"1986", Int64.Type}, {"1987", Int64.Type}, {"1988", Int64.Type}, {"1989", Int64.Type}, {"1990", Int64.Type}, {"1991", Int64.Type}, {"1992", Int64.Type}, {"1993", Int64.Type}, {"1994", Int64.Type}, {"1995", Int64.Type}, {"1996", Int64.Type}, {"1997", Int64.Type}, {"1998", Int64.Type}, {"1999", Int64.Type}, {"2000", Int64.Type}, {"2001", Int64.Type}, {"2002", Int64.Type}, {"2003", Int64.Type}, {"2004", Int64.Type}, {"2005", Int64.Type}, {"2006", Int64.Type}, {"2007", Int64.Type}, {"2008", Int64.Type}, {"2009", Int64.Type}, {"2010", Int64.Type}, {"2011", Int64.Type}, {"2012", Int64.Type}, {"2013", Int64.Type}, {"2014", Int64.Type}, {"2015", Int64.Type}, {"2016", Int64.Type}, {"2017", Int64.Type}, {"2018", Int64.Type}, {"2019", Int64.Type}, {"2020", Int64.Type}, {"2021", Int64.Type}, {"2022", Int64.Type}, {"2023", Int64.Type}, {"2024", Int64.Type}}),
+				    #"Unpivoted Other Columns" = Table.UnpivotOtherColumns(#"Changed Type", {"Country Name", "Country Code", "Indicator Name", "Indicator Code"}, "Attribute", "Value"),
+				    #"Renamed Columns" = Table.RenameColumns(#"Unpivoted Other Columns",{{"Attribute", "Year"}, {"Value", "Population"}}),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns",{{"Year", Int64.Type}, {"Population", Int64.Type}}),
+				    #"Merged Queries" = Table.FuzzyNestedJoin(#"Changed Type1", {"Country Code"}, #"Metadata - Countries", {"Country Code"}, "Metadata - Countries", JoinKind.LeftOuter, [IgnoreCase=true, IgnoreSpace=true]),
+				    #"Expanded Metadata - Countries" = Table.ExpandTableColumn(#"Merged Queries", "Metadata - Countries", {"Country Code", "Region", "IncomeGroup"}, {"Country Code.1", "Region", "IncomeGroup"}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Expanded Metadata - Countries",{"Country Code.1"})
+				in
+				    #"Removed Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

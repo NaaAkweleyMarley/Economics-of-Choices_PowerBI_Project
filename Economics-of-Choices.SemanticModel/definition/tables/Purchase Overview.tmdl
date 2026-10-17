@@ -1,0 +1,87 @@
+table 'Purchase Overview'
+	lineageTag: ca78a5b4-8277-46d9-9d44-2e103b3deea7
+
+	column Location
+		dataType: string
+		lineageTag: 8de99f30-d8cb-4d28-96b4-da8337e6c755
+		summarizeBy: none
+		sourceColumn: Location
+
+		annotation SummarizationSetBy = Automatic
+
+	column Products
+		dataType: string
+		lineageTag: 8a213491-7fce-44ee-a5c9-b3426565a316
+		summarizeBy: none
+		sourceColumn: Products
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 5a0f4204-93a9-440d-9a2b-b80a734f72c8
+		summarizeBy: none
+		sourceColumn: Date
+
+		variation Variation
+			isDefault
+			relationship: 26cc8309-220b-420f-b954-90f6338befa6
+			defaultHierarchy: LocalDateTable_01eb1d75-620a-4767-84f7-7e2c893c60ef.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Grand Total'
+		dataType: decimal
+		formatString: "GH₵"#,0.###############;-"GH₵"#,0.###############;"GH₵"#,0.###############
+		lineageTag: 1750407c-a9a6-40e3-8ad5-263400851f40
+		summarizeBy: none
+		sourceColumn: Grand Total
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GH"}
+
+	column Value
+		dataType: decimal
+		formatString: "GH₵"#,0.###############;-"GH₵"#,0.###############;"GH₵"#,0.###############
+		lineageTag: dae56421-5a3f-4f49-8553-f4aa3a2c5729
+		summarizeBy: sum
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"currencyCulture":"en-GH"}
+
+	partition 'Purchase Overview' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents("C:\Users\akwel\Downloads\Apocolypse Food Prep - Power Query Editor Tutorial.xlsx"), null, true),
+				    #"Puchase Overview_Sheet" = Source{[Item="Puchase Overview",Kind="Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Puchase Overview_Sheet", [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Apocolypse Food Prep Overview", type text}, {"Column2", type text}, {"Column3", type any}, {"Column4", type any}, {"Column5", type any}, {"Column6", type any}, {"Column7", type any}}),
+				    #"Removed Top Rows" = Table.Skip(#"Changed Type",2),
+				    #"Promoted Headers1" = Table.PromoteHeaders(#"Removed Top Rows", [PromoteAllScalars=true]),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers1",{{"Location", type text}, {"Products", type text}, {"01/01/2022", type number}, {"01/02/2022", type number}, {"01/03/2022", type number}, {"01/04/2022", type number}, {"Grand Total", type number}}),
+				    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type1", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+				    #"Removed Blank Rows1" = Table.SelectRows(#"Removed Blank Rows", each not List.IsEmpty(List.RemoveMatchingItems(Record.FieldValues(_), {"", null}))),
+				    #"Replaced Value" = Table.ReplaceValue(#"Removed Blank Rows1",null,0,Replacer.ReplaceValue,{"01/02/2022"}),
+				    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value",null,0,Replacer.ReplaceValue,{"01/04/2022"}),
+				    #"Filtered Rows" = Table.SelectRows(#"Replaced Value1", each ([Products] <> "Costco Total" and [Products] <> "Grand Total" and [Products] <> "Target Total" and [Products] <> "Walmart Total")),
+				    #"Changed Type2" = Table.TransformColumnTypes(#"Filtered Rows",{{"01/01/2022", type number}}),
+				    #"Rounded Off" = Table.TransformColumns(#"Changed Type2",{{"01/01/2022", each Number.Round(_, 2), type number}}),
+				    #"Changed Type3" = Table.TransformColumnTypes(#"Rounded Off",{{"01/01/2022", Currency.Type}, {"01/02/2022", Currency.Type}, {"01/03/2022", Currency.Type}, {"01/04/2022", Currency.Type}, {"Grand Total", Currency.Type}}),
+				    #"Unpivoted Columns" = Table.UnpivotOtherColumns(#"Changed Type3", {"Location", "Products", "Grand Total"}, "Attribute", "Value"),
+				    #"Renamed Columns" = Table.RenameColumns(#"Unpivoted Columns",{{"Attribute", "Date"}}),
+				    #"Changed Type4" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
+				    #"Reordered Columns" = Table.ReorderColumns(#"Changed Type4",{"Location", "Products", "Date", "Grand Total", "Value"})
+				in
+				    #"Reordered Columns"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

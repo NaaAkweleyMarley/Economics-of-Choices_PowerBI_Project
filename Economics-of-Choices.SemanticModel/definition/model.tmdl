@@ -1,0 +1,23 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-GH
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["Pivot Table","Purchase Overview","Data and Metadata Countries (merged)","Metadata - Countries"]
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table 'Pivot Table'
+ref table 'Purchase Overview'
+ref table DateTableTemplate_73008838-58d4-45cf-a42e-5df2c2356d3b
+ref table LocalDateTable_01eb1d75-620a-4767-84f7-7e2c893c60ef
+ref table 'Data and Metadata Countries (merged)'
+ref table 'Metadata - Countries'
+
+ref cultureInfo en-US
+

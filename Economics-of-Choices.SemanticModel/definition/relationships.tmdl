@@ -1,0 +1,22 @@
+relationship 26cc8309-220b-420f-b954-90f6338befa6
+	joinOnDateBehavior: datePartOnly
+	fromColumn: 'Purchase Overview'.Date
+	toColumn: LocalDateTable_01eb1d75-620a-4767-84f7-7e2c893c60ef.Date
+
+relationship AutoDetected_a63c93f7-f983-434e-bb9f-e1d411c0cb00
+	fromColumn: 'Data and Metadata Countries (merged)'.'Country Code'
+	toColumn: 'Metadata - Countries'.'Country Code'
+
+relationship 8f2fe1c9-d168-dce6-16ae-086f90256425
+	crossFilteringBehavior: bothDirections
+	toCardinality: many
+	fromColumn: 'Pivot Table'.'Grand Total'
+	toColumn: 'Purchase Overview'.'Grand Total'
+
+relationship f7467bfa-dcd3-b7e8-54a5-0f4856e0a745
+	isActive: false
+	crossFilteringBehavior: bothDirections
+	toCardinality: many
+	fromColumn: 'Pivot Table'.Value
+	toColumn: 'Purchase Overview'.Value
+

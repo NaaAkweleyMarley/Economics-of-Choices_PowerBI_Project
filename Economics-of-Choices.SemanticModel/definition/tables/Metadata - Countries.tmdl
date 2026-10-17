@@ -1,0 +1,45 @@
+table 'Metadata - Countries'
+	lineageTag: 187c4870-a6de-45f9-a7d8-e8ba9e7c71e8
+
+	column 'Country Code'
+		dataType: string
+		lineageTag: 8f44ea6d-15bf-458a-a744-4b65644f1b89
+		summarizeBy: none
+		sourceColumn: Country Code
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		lineageTag: aa0746d6-44a8-402d-b42a-ad516732c39b
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column IncomeGroup
+		dataType: string
+		lineageTag: d5bdc79c-912b-4f75-b2f3-cd237f00132a
+		summarizeBy: none
+		sourceColumn: IncomeGroup
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Metadata - Countries' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(Web.Contents("https://api.worldbank.org/v2/en/indicator/SP.POP.TOTL?downloadformat=excel"), null, true),
+				    #"Metadata - Countries1" = Source{[Name="Metadata - Countries"]}[Data],
+				    #"Changed Type" = Table.TransformColumnTypes(#"Metadata - Countries1",{{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}, {"Column5", type text}}),
+				    #"Promoted Headers" = Table.PromoteHeaders(#"Changed Type", [PromoteAllScalars=true]),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Promoted Headers",{{"Country Code", type text}, {"Region", type text}, {"IncomeGroup", type text}, {"SpecialNotes", type text}, {"TableName", type text}}),
+				    #"Removed Columns" = Table.RemoveColumns(#"Changed Type1",{"SpecialNotes", "TableName"}),
+				    #"Filtered Rows" = Table.SelectRows(#"Removed Columns", each ([Region] <> null) and ([IncomeGroup] <> null))
+				in
+				    #"Filtered Rows"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
